@@ -50,15 +50,42 @@ export default function FarmDetail() {
         {/* UAV Image Placeholder */}
         <Card>
           <CardHeader>
-            <CardTitle>UAV Scan</CardTitle>
+            <CardTitle>Futuristic UAV View</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative h-64 bg-muted rounded-lg flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg"></div>
-              <div className="absolute inset-4 border-2 border-primary/30 rounded"></div>
-              <div className="absolute top-2 left-2 w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-              <div className="absolute bottom-4 right-4 w-6 h-6 bg-orange-500 rounded-full animate-pulse"></div>
-              <p className="text-muted-foreground">UAV Image Placeholder</p>
+            <div className="relative h-64 bg-muted rounded-lg overflow-hidden">
+              {/* Base image placeholder */}
+              <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                <p className="text-muted-foreground">Farm Aerial View</p>
+              </div>
+
+              {/* Futuristic overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10"></div>
+
+              {/* Grid pattern */}
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(0deg, hsl(var(--primary)), hsl(var(--primary)) 1px, transparent 1px, transparent 20px),
+                                   repeating-linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)) 1px, transparent 1px, transparent 20px)`,
+                }}
+              ></div>
+
+              {/* Animated scan hotspots */}
+              <div className="absolute top-4 left-4 w-3 h-3 bg-primary rounded-full animate-ping"></div>
+              <div className="absolute top-4 left-4 w-3 h-3 bg-primary rounded-full"></div>
+
+              <div className="absolute bottom-6 right-6 w-4 h-4 bg-secondary rounded-full animate-ping"></div>
+              <div className="absolute bottom-6 right-6 w-4 h-4 bg-secondary rounded-full"></div>
+
+              <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-orange-500 rounded-full animate-ping"></div>
+              <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-orange-500 rounded-full"></div>
+
+              {/* Scan lines */}
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-primary animate-pulse" style={{ animationDelay: '0s' }}></div>
+              <div className="absolute top-1/4 left-0 w-full h-0.5 bg-secondary animate-pulse" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-primary animate-pulse" style={{ animationDelay: '2s' }}></div>
+              <div className="absolute bottom-1/4 left-0 w-full h-0.5 bg-secondary animate-pulse" style={{ animationDelay: '3s' }}></div>
             </div>
           </CardContent>
         </Card>

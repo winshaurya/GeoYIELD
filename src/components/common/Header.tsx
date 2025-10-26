@@ -11,7 +11,7 @@ import {
 export default function Header() {
   return (
     <header className="bg-card border-b px-6 py-4 flex items-center justify-between ml-64">
-      <h1 className="text-2xl font-bold text-primary">Farm-Level Yield Estimation</h1>
+      <h1 className="text-2xl font-bold text-primary">GeoYIELD</h1>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
