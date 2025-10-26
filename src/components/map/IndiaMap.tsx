@@ -7,7 +7,7 @@ interface IndiaMapProps {
   farmData: any[];
 }
 
-const INDIA_TOPO_JSON = 'https://raw.githubusercontent.com/datameet/india-states/master/india-states.geojson';
+const INDIA_TOPO_JSON = 'https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson';
 
 export default function IndiaMap({ onStateClick, selectedState, farmData }: IndiaMapProps) {
   const [hoveredState, setHoveredState] = useState<string | null>(null);
@@ -28,8 +28,8 @@ export default function IndiaMap({ onStateClick, selectedState, farmData }: Indi
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{
-          scale: 1000,
-          center: [78.9629, 22.5937] // Center of India
+          scale: 800,
+          center: [78, 22] // Center of India
         }}
         className="w-full h-full"
       >

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoYield Prototype</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Leaflet CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    <!-- Load Leaflet.heat plugin for raster visualization -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Ensure map takes height */
+        #map { height: 60vh; }
+        /* Style for Leaflet popups */
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px; /* Rounded corners for popups */
+        }
+        /* Custom message box */
+        #messageBox {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000; /* Ensure it's above the map */
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #messageBox.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        /* Style selected farm feature */
+        .selected-farm {
+            fillColor: '#fbbf24', // Amber-400
+            fillOpacity: 0.5;
+            color: '#f59e0b'; // Amber-500
+            weight: 3;
+        }
+         /* Simple spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden { display: none; }
+    </style>
+    <!-- Add Google Fonts for Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-6 md:p-8">
+        <!-- Header -->
+        <header class="mb-6 flex flex-col sm:flex-row justify-between items-center pb-4 border-b border-gray-200">
+             <div class="flex items-center space-x-3 mb-4 sm:mb-0">
+                 <!-- Placeholder for Logo -->
+                 <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                 <h1 class="text-2xl md:text-3xl font-bold text-gray-800">GeoYield Prototype</h1>
+            </div>
+            <p class="text-sm text-gray-500 text-center sm:text-right">Farm-Level Yield Potential Monitoring</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Controls and Info Panel -->
+            <div class="lg:col-span-1 space-y-4">
+                <!-- Farm Selection -->
+                <div>
+                    <label for="farmSelect" class="block text-sm font-medium text-gray-700 mb-1">Select Farm:</label>
+                    <select id="farmSelect" name="farmSelect" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
+                        <option value="">-- Select a Farm --</option>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+
+                <!-- Date Selection -->
+                <div>
+                    <label for="dateSelect" class="block text-sm font-medium text-gray-700 mb-1">Select Date:</label>
+                    <input type="date" id="dateSelect" name="dateSelect" class="mt-1 block w-full pl-3 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
+                </div>
+
+                <!-- Action Button -->
+                <button id="analyzeBtn" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50" disabled>
+                     <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" id="loadingSpinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Analyze Farm
+                </button>
+
+                <!-- Results Display -->
+                <div id="resultsPanel" class="bg-gray-50 p-4 rounded-md border border-gray-200 space-y-3 hidden">
+                    <h3 class="text-lg font-semibold text-gray-800">Analysis Results</h3>
+                    <p class="text-sm text-gray-600">Selected Farm: <span id="selectedFarmName" class="font-medium text-gray-900">N/A</span></p>
+                    <p class="text-sm text-gray-600">Analysis Date: <span id="analysisDate" class="font-medium text-gray-900">N/A</span></p>
+                    <p class="text-sm text-gray-600">Simulated Peak NDVI: <span id="peakNdvi" class="font-medium text-gray-900">N/A</span></p>
+                     <p class="text-sm text-gray-600">Yield Potential Index (YPI): <span id="ypiValue" class="font-medium text-gray-900 text-lg">N/A</span></p>
+                     <p class="text-xs text-gray-500 italic">Note: NDVI & YPI are simulated based on dummy data representing variability.</p>
+                </div>
+
+                 <!-- Legend -->
+                 <div id="legendPanel" class="bg-gray-50 p-4 rounded-md border border-gray-200 hidden">
+                    <h4 class="text-md font-semibold text-gray-800 mb-2">Simulated NDVI Legend</h4>
+                    <div class="flex items-center space-x-2">
+                         <div class="w-4 h-4 rounded-full bg-red-600"></div> <span class="text-xs text-gray-700">Low (Stressed/Bare)</span>
+                    </div>
+                     <div class="flex items-center space-x-2">
+                         <div class="w-4 h-4 rounded-full bg-yellow-400"></div> <span class="text-xs text-gray-700">Medium</span>
+                    </div>
+                     <div class="flex items-center space-x-2">
+                         <div class="w-4 h-4 rounded-full bg-green-600"></div> <span class="text-xs text-gray-700">High (Healthy Veg.)</span>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Map Area -->
+            <div class="lg:col-span-2 bg-gray-200 rounded-md shadow-inner">
+                <div id="map" class="w-full h-full rounded-md z-0"></div>
+            </div>
+
+        </div> <!-- End grid -->
+
+         <!-- Footer/Info -->
+        <footer class="mt-8 text-center text-xs text-gray-500">
+            <p>GeoYield Prototype v0.1 | IndoriPohe Team | SIH 2025</p>
+            <p class="mt-1">This prototype uses simulated data for demonstration purposes.</p>
+        </footer>
+
+    </div> <!-- End container -->
+
+    <!-- Message Box -->
+    <div id="messageBox" class="bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-md shadow-md">
+        <span id="messageText"></span>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const MAP_CENTER = [22.7196, 75.8577]; // Approx. center of Indore
+        const MAP_ZOOM = 11;
+        const DUMMY_NDVI_RESOLUTION = 0.0001; // Approx 10m in degrees at this latitude
+
+        // --- Sample Farm Data (GeoJSON Features) ---
+        // Replace with more/different actual boundaries if available
+        const farmData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": { "id": "farm_1", "name": "Farm Alpha (Near Pithampur)" },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [75.7050, 22.6100], [75.7080, 22.6100], [75.7080, 22.6120], [75.7050, 22.6120], [75.7050, 22.6100]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "id": "farm_2", "name": "Farm Beta (Near Sanwer)" },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [75.8300, 22.8550], [75.8330, 22.8555], [75.8325, 22.8580], [75.8295, 22.8575], [75.8300, 22.8550]
+                        ]]
+                    }
+                },
+                 {
+                    "type": "Feature",
+                    "properties": { "id": "farm_3", "name": "Farm Gamma (Irregular)" },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                             [75.950, 22.750], [75.952, 22.751], [75.953, 22.753], [75.951, 22.754],[75.949, 22.752], [75.950, 22.750]
+                        ]]
+                    }
+                }
+                // Add more farm features here
+            ]
+        };
+
+        // --- DOM Elements ---
+        const mapElement = document.getElementById('map');
+        const farmSelect = document.getElementById('farmSelect');
+        const dateSelect = document.getElementById('dateSelect');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const selectedFarmName = document.getElementById('selectedFarmName');
+        const analysisDate = document.getElementById('analysisDate');
+        const peakNdvi = document.getElementById('peakNdvi');
+        const ypiValue = document.getElementById('ypiValue');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const legendPanel = document.getElementById('legendPanel');
+
+        // --- Map Variables ---
+        let map;
+        let farmLayer;
+        let ndviLayer = null; // To hold the heat/raster layer
+        let selectedFarmFeature = null;
+        let lastSelectedFarmLayer = null;
+
+         // --- State ---
+         let selectedFarmId = null;
+         let selectedDate = null;
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            populateFarmSelect();
+            setupEventListeners();
+            setDefaultDate();
+        });
+
+        // --- Map Functions ---
+        function initMap() {
+            map = L.map(mapElement).setView(MAP_CENTER, MAP_ZOOM);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            farmLayer = L.geoJSON(farmData, {
+                style: getFarmStyle,
+                onEachFeature: onEachFarmFeature
+            }).addTo(map);
+
+            // Add simple scale control
+             L.control.scale({ imperial: false }).addTo(map);
+        }
+
+        function getFarmStyle(feature) {
+             // Default style for farms
+            return {
+                fillColor: '#60a5fa', // Blue-400
+                weight: 2,
+                opacity: 1,
+                color: '#3b82f6', // Blue-500
+                fillOpacity: 0.3
+            };
+        }
+
+         function getSelectedFarmStyle(feature) {
+            // Style for the selected farm
+             return {
+                fillColor: '#fcd34d', // Amber-300
+                weight: 3,
+                opacity: 1,
+                color: '#f59e0b', // Amber-600
+                fillOpacity: 0.6
+            };
+        }
+
+        function onEachFarmFeature(feature, layer) {
+            // Add popup and click listener
+            const farmName = feature.properties.name || 'Unnamed Farm';
+            layer.bindPopup(`<b>${farmName}</b><br>ID: ${feature.properties.id}`);
+
+            layer.on('click', (e) => {
+                 const clickedLayer = e.target;
+                 const farmId = clickedLayer.feature.properties.id;
+
+                 // Update select dropdown
+                 farmSelect.value = farmId;
+
+                 // Update map style and state
+                 highlightFarm(farmId, clickedLayer);
+
+                 // Enable analyze button if date is also selected
+                 checkAnalyzeButtonState();
+
+                 // Zoom to farm
+                 map.fitBounds(clickedLayer.getBounds(), { padding: [50, 50] });
+            });
+        }
+
+         function highlightFarm(farmId, clickedLayer = null) {
+            selectedFarmId = farmId;
+
+            // Reset style of previously selected layer
+             if (lastSelectedFarmLayer) {
+                farmLayer.resetStyle(lastSelectedFarmLayer);
+            }
+
+            // Find the layer corresponding to farmId if not provided
+            let targetLayer = clickedLayer;
+            if (!targetLayer) {
+                farmLayer.eachLayer(layer => {
+                    if (layer.feature.properties.id === farmId) {
+                        targetLayer = layer;
+                    }
+                });
+            }
+
+            // Apply selected style
+            if (targetLayer) {
+                targetLayer.setStyle(getSelectedFarmStyle(targetLayer.feature));
+                 targetLayer.bringToFront(); // Ensure selected farm outline is on top
+                 lastSelectedFarmLayer = targetLayer; // Store reference to the currently selected layer
+                 selectedFarmFeature = targetLayer.feature; // Store selected feature data
+            } else {
+                 lastSelectedFarmLayer = null;
+                 selectedFarmFeature = null;
+            }
+
+             checkAnalyzeButtonState(); // Update button state after selection change
+         }
+
+        // --- Form and Control Functions ---
+        function populateFarmSelect() {
+            farmData.features.forEach(feature => {
+                const option = document.createElement('option');
+                option.value = feature.properties.id;
+                option.textContent = feature.properties.name || `Farm ID: ${feature.properties.id}`;
+                farmSelect.appendChild(option);
+            });
+        }
+
+        function setDefaultDate() {
+            const today = new Date();
+            // Go back ~3 months for potentially greener period in India (post-monsoon)
+            today.setMonth(today.getMonth() - 3);
+             // Ensure it's not a future date if calculation is off
+            if (today > new Date()) {
+                today = new Date();
+                today.setDate(today.getDate() - 7); // Default to a week ago if calculated date is future
+            }
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateSelect.value = `${yyyy}-${mm}-${dd}`;
+            selectedDate = dateSelect.value; // Initialize selectedDate
+             checkAnalyzeButtonState(); // Check button state after setting default date
+        }
+
+        function setupEventListeners() {
+            farmSelect.addEventListener('change', (e) => {
+                const farmId = e.target.value;
+                 if (farmId) {
+                    highlightFarm(farmId);
+                    // Zoom to selected farm
+                     farmLayer.eachLayer(layer => {
+                         if (layer.feature.properties.id === farmId) {
+                            map.fitBounds(layer.getBounds(), { padding: [50, 50] });
+                        }
+                    });
+                } else {
+                     highlightFarm(null); // Deselect if "-- Select --" is chosen
+                     map.setView(MAP_CENTER, MAP_ZOOM); // Reset view
+                 }
+                clearResults(); // Clear results when farm changes
+                removeNdviLayer(); // Remove NDVI map when farm changes
+                legendPanel.classList.add('hidden');
+            });
+
+            dateSelect.addEventListener('change', (e) => {
+                selectedDate = e.target.value;
+                checkAnalyzeButtonState();
+                clearResults(); // Clear results when date changes
+                removeNdviLayer(); // Remove NDVI map when date changes
+                legendPanel.classList.add('hidden');
+            });
+
+            analyzeBtn.addEventListener('click', handleAnalysis);
+        }
+
+         function checkAnalyzeButtonState() {
+             // Enable button only if both farm and date are selected
+             analyzeBtn.disabled = !(selectedFarmId && selectedDate);
+         }
+
+        function clearResults() {
+             resultsPanel.classList.add('hidden');
+             selectedFarmName.textContent = 'N/A';
+             analysisDate.textContent = 'N/A';
+             peakNdvi.textContent = 'N/A';
+             ypiValue.textContent = 'N/A';
+        }
+
+        function showLoading(isLoading) {
+             if (isLoading) {
+                 loadingSpinner.classList.remove('hidden');
+                 analyzeBtn.disabled = true;
+             } else {
+                 loadingSpinner.classList.add('hidden');
+                 checkAnalyzeButtonState(); // Re-enable based on selections
+             }
+        }
+
+        function showMessage(text, isError = false) {
+             messageText.textContent = text;
+             messageBox.className = `text-white text-sm font-medium px-4 py-2 rounded-md shadow-md ${isError ? 'bg-red-500' : 'bg-blue-500'} show`;
+             setTimeout(() => {
+                 messageBox.classList.remove('show');
+             }, 3000); // Hide after 3 seconds
+        }
+
+        // --- Analysis Logic ---
+        async function handleAnalysis() {
+            if (!selectedFarmId || !selectedDate || !selectedFarmFeature) {
+                showMessage('Please select a farm and a date first.', true);
+                return;
+            }
+
+            showLoading(true);
+            clearResults();
+            removeNdviLayer(); // Clear previous NDVI if any
+            legendPanel.classList.add('hidden');
+
+            // Simulate fetching and processing data
+            // In a real app, this would involve API calls and geospatial processing
+            console.log(`Simulating analysis for farm ${selectedFarmId} on ${selectedDate}`);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network/processing delay
+
+            try {
+                // 1. Get farm bounds
+                const bounds = L.geoJSON(selectedFarmFeature).getBounds();
+
+                 // 2. SIMULATE NDVI Data Generation
+                 // Generate dummy NDVI data points within the farm bounds
+                 // This simulates the result of processing a satellite image
+                 const dummyNdviData = generateDummyNdvi(bounds);
+
+                if (!dummyNdviData || dummyNdviData.length === 0) {
+                     throw new Error("Failed to generate simulated NDVI data.");
+                 }
+
+                 // 3. Calculate YPI and Peak NDVI from Dummy Data
+                 const { ypi, maxNdvi } = calculateYpiFromNdvi(dummyNdviData);
+
+                 // 4. Display Dummy NDVI on Map
+                 displayNdviLayer(dummyNdviData);
+                 legendPanel.classList.remove('hidden'); // Show legend only when NDVI is displayed
+
+                 // 5. Display Results
+                 selectedFarmName.textContent = selectedFarmFeature.properties.name || selectedFarmId;
+                 analysisDate.textContent = selectedDate;
+                 peakNdvi.textContent = maxNdvi.toFixed(3);
+                 ypiValue.textContent = ypi.toFixed(2); // YPI might be on a different scale
+                 resultsPanel.classList.remove('hidden');
+
+                showMessage('Analysis simulation complete!', false);
+
+            } catch (error) {
+                 console.error("Analysis simulation error:", error);
+                 showMessage(`Error during simulation: ${error.message}`, true);
+                 clearResults();
+                 legendPanel.classList.add('hidden');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // --- Dummy Data Generation and Calculation ---
+
+        function generateDummyNdvi(bounds) {
+            // Generate a grid of points within the bounds with dummy NDVI values
+            // This simulates raster data with variability
+            const points = [];
+            const sw = bounds.getSouthWest();
+            const ne = bounds.getNorthEast();
+            const step = DUMMY_NDVI_RESOLUTION; // Resolution for dummy points
+
+            // Seed random number generator for consistency based on date/farm ID (simple hash)
+            let seed = selectedDate.split('-').join('') + selectedFarmId.replace(/\D/g,'');
+            seed = parseInt(seed) % 2147483647; // Keep it within integer limits
+            const random = () => {
+                var x = Math.sin(seed++) * 10000;
+                return x - Math.floor(x);
+            };
+
+            // Basic pattern: Higher NDVI towards center, with noise
+            const centerLat = (sw.lat + ne.lat) / 2;
+            const centerLng = (sw.lng + ne.lng) / 2;
+            const maxDist = Math.max(ne.lat - sw.lat, ne.lng - sw.lng) / 2;
+
+            for (let lat = sw.lat; lat < ne.lat; lat += step) {
+                for (let lng = sw.lng; lng < ne.lng; lng += step) {
+                    // Simple check if point is roughly inside the polygon (optional optimization)
+                    // A proper check would use point-in-polygon test, but this is faster for demo
+                    // if (!isPointInFeature(lat, lng, selectedFarmFeature)) continue;
+
+                    const dist = Math.sqrt(Math.pow(lat - centerLat, 2) + Math.pow(lng - centerLng, 2));
+                    const baseNdvi = 0.2 + 0.6 * Math.max(0, 1 - (dist / (maxDist + 0.0001))); // Base value decreases from center (0.2 to 0.8)
+                    const noise = (random() - 0.5) * 0.2; // Add some noise (-0.1 to +0.1)
+                    let ndviValue = baseNdvi + noise;
+                    ndviValue = Math.max(0.05, Math.min(0.9, ndviValue)); // Clamp NDVI between realistic bounds
+
+                    // Add point: [lat, lng, intensity (NDVI)]
+                    points.push([lat, lng, ndviValue]);
+                }
+            }
+            console.log(`Generated ${points.length} dummy NDVI points.`);
+            return points;
+        }
+
+         // Basic point-in-polygon check (for rectangular/simple shapes, may fail on complex ones)
+        // For a robust solution use a library like Turf.js if needed
+        function isPointInFeature(lat, lng, feature) {
+            if (!feature || feature.geometry.type !== 'Polygon') return false;
+            // Simplified check: point must be within the bounding box of the polygon
+            const coords = feature.geometry.coordinates[0];
+            let minLng = coords[0][0], maxLng = coords[0][0];
+            let minLat = coords[0][1], maxLat = coords[0][1];
+            for (let i = 1; i < coords.length; i++) {
+                minLng = Math.min(minLng, coords[i][0]);
+                maxLng = Math.max(maxLng, coords[i][0]);
+                minLat = Math.min(minLat, coords[i][1]);
+                maxLat = Math.max(maxLat, coords[i][1]);
+            }
+             return lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat;
+             // NOTE: This is NOT a real point-in-polygon test, just a bounding box check
+         }
+
+        function calculateYpiFromNdvi(ndviData) {
+            // Calculate a simple Yield Potential Index (YPI) from the dummy NDVI data
+            // Example: Scale the average NDVI to a potential yield range (e.g., 0-100)
+            // Example: Use Peak NDVI
+            if (!ndviData || ndviData.length === 0) {
+                return { ypi: 0, maxNdvi: 0 };
+            }
+
+            let sumNdvi = 0;
+            let maxNdvi = 0;
+            ndviData.forEach(point => {
+                sumNdvi += point[2]; // Intensity is at index 2
+                if (point[2] > maxNdvi) {
+                    maxNdvi = point[2];
+                }
+            });
+
+            const avgNdvi = sumNdvi / ndviData.length;
+
+            // Simple YPI calculation: Scale avg NDVI (assuming 0.1-0.9 range) to 0-100
+             // Adjust this scaling based on expected yield relationships
+            const ypi = ((avgNdvi - 0.1) / (0.9 - 0.1)) * 100;
+
+             return { ypi: Math.max(0, Math.min(100, ypi)), maxNdvi: maxNdvi }; // Clamp YPI 0-100
+        }
+
+        function displayNdviLayer(ndviData) {
+            removeNdviLayer(); // Remove existing layer first
+
+            if (!ndviData || ndviData.length === 0) {
+                 console.log("No NDVI data to display.");
+                 return;
+             }
+
+            // Use Leaflet.heat to visualize the point data as a heatmap/raster
+             ndviLayer = L.heatLayer(ndviData, {
+                 radius: 15, // Adjust for visual density based on point spacing
+                 blur: 10,   // Adjust blur effect
+                 maxZoom: 18,
+                 max: 0.9, // Max expected NDVI value for scaling colors
+                 minOpacity: 0.4,
+                 gradient: { // Color gradient: Red (low) -> Yellow -> Green (high)
+                    0.2: 'red',
+                    0.5: 'yellow',
+                    0.8: 'green'
+                 }
+             }).addTo(map);
+             console.log("NDVI Layer added to map.");
+        }
+
+        function removeNdviLayer() {
+            if (ndviLayer && map.hasLayer(ndviLayer)) {
+                map.removeLayer(ndviLayer);
+                ndviLayer = null;
+                console.log("NDVI Layer removed.");
+            }
+        }
+
+    </script>
+
+</body>
+</html>
