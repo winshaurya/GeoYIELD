@@ -1,4 +1,4 @@
-import { useFarmData, FarmData } from '@/hooks/useFarmData';
+import { useFarmData } from '@/hooks/useFarmData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import {
