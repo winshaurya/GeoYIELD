@@ -26,7 +26,7 @@ type FarmDataContextType = {
 
 const FarmDataContext = createContext<FarmDataContextType | undefined>(undefined);
 
-export const FarmDataProvider = ({ children }: { children: ReactNode }): JSX.Element => {
+export const FarmDataProvider = ({ children }: { children: ReactNode }): React.ReactElement => {
   const [data, setData] = useState<FarmData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

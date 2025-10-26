@@ -5,6 +5,7 @@ import Dashboard from './app/(root)/page';
 import FarmDetail from './app/farm/[farmId]/page';
 import Scalability from './app/scalability/page';
 import Reports from './app/reports/page';
+import Prototype from './app/prototype/page';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="farm/:farmId" element={<FarmDetail />} />
             <Route path="scalability" element={<Scalability />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="prototype" element={<Prototype />} />
           </Route>
         </Routes>
       </Router>

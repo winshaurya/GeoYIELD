@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Globe, FileText } from 'lucide-react';
+import { LayoutDashboard, Globe, FileText, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Scalability', href: '/scalability', icon: Globe },
   { name: 'Reports', href: '/reports', icon: FileText },
+  { name: 'Prototype', href: '/prototype', icon: Map },
 ];
 
 export default function Sidebar() {
