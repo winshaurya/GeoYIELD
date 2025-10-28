@@ -54,3 +54,10 @@
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* Set site-wide font to Courier New (monospace) */
+@layer base {
+  html, body, input, textarea, button, select {
+    font-family: 'Courier New', Courier, monospace;
+  }
+}
