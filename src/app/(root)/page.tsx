@@ -54,11 +54,7 @@ export default function Dashboard() {
     <div className="flex" style={{ height: 'calc(100vh - 120px)' }}>
       {/* Map Section */}
       <div className="flex-1 p-4">
-        <IndiaMap
-          onStateClick={setSelectedState}
-          selectedState={selectedState}
-          farmData={data}
-        />
+        <IndiaMap />
       </div>
 
       {/* Analytics Sidebar */}
