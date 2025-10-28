@@ -7,15 +7,19 @@ export type FarmData = {
   district: string;
   village: string;
   coordinates: { lat: number; lng: number };
-  cropType: 'Wheat' | 'Rice' | 'Sugarcane' | 'Cotton';
+  farmSize: number;
+  soilType: string;
+  irrigationType: string;
+  cropType: 'Wheat' | 'Rice' | 'Sugarcane' | 'Cotton' | 'Maize' | 'Soybean' | 'Groundnut' | 'Chickpea';
   sowingDate: string;
   expectedYield: number;
   predictedYield: number;
   yieldVariancePercent: number;
-  healthStatus: 'Healthy' | 'Stressed_Water' | 'Stressed_Pest' | 'Damaged_Weather';
+  healthStatus: 'Healthy' | 'Stressed_Water' | 'Stressed_Pest' | 'Damaged_Weather' | 'Nutrient_Deficient';
   lastUAVScan: string;
   ndviHistory: { date: string; value: number }[];
   soilMoistureHistory: { date: string; value: number }[];
+  weatherHistory: { date: string; temperature: number; rainfall: number }[];
 };
 
 type FarmDataContextType = {

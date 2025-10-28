@@ -22,33 +22,36 @@ ChartJS.register(
   Legend
 )
 
-const options = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top',
+const LineChart = ({ data, xAxis, yAxis, title, color = 'rgb(53, 162, 235)' }) => {
+  const labels = data.map(item => item[xAxis]);
+  const values = data.map(item => item[yAxis]);
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: yAxis,
+        data: values,
+        borderColor: color,
+        backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.5)'),
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: !!title,
+        text: title,
+      },
     },
-    title: {
-      display: false,
-      text: 'Sample Chart',
-    },
-  },
+  };
+
+  return <Line options={options} data={chartData} />
 }
 
-const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']
-
-const data = {
-  labels,
-  datasets: [
-    {
-      label: 'Yield (%)',
-      data: [2.1, 2.4, 2.8, 3.0, 2.9, 3.2, 3.5],
-      borderColor: 'rgb(53, 162, 235)',
-      backgroundColor: 'rgba(53, 162, 235, 0.5)',
-    },
-  ],
-}
-
-export default function LineChart() {
-  return <Line options={options} data={data} />
-}
+export default LineChart

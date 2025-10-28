@@ -3,6 +3,7 @@ import { useFarmData } from '@/hooks/useFarmData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TimeSeriesChart from '@/components/charts/TimeSeriesChart';
 import YieldGauge from '@/components/charts/YieldGauge';
+import LineChart from '@/chart/LineChart';
 
 export default function FarmDetail() {
   const { farmId } = useParams<{ farmId: string }>();
@@ -135,6 +136,8 @@ export default function FarmDetail() {
           </div>
         </CardContent>
       </Card>
+
+
     </div>
   );
 }
